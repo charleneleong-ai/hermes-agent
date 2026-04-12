@@ -2115,8 +2115,17 @@ class HermesCLI:
                         (bar_style, percent_label),
                         ("class:status-bar-dim", " │ "),
                         ("class:status-bar-dim", duration_label),
-                        ("class:status-bar", " "),
                     ]
+                    # Custom fragments for session title and vision model
+                    if self.session_title:
+                        frags.append(('class:status-bar-dim', ' │ '))
+                        frags.append(('class:status-bar-strong', f'[{self.session_title[:20]}]'))
+
+                    vision_model = self.config.get('auxiliary_vision_model')
+                    if vision_model:
+                        frags.append(('class:status-bar-dim', ' │ '))
+                        frags.append(('class:status-bar', f'👁 {vision_model.replace("gemini-", "")}'))
+                    frags.append(("class:status-bar", " "))
 
             total_width = sum(self._status_bar_display_width(text) for _, text in frags)
             if total_width > width:
