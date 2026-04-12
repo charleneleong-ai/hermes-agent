@@ -1230,6 +1230,9 @@ class AIAgent:
 
         # Store for reuse in switch_model (so config override persists across model switches)
         self._config_context_length = _config_context_length
+        # Remember the default model so switch_model can decide whether to apply
+        # _config_context_length after a /model switch (only applies to the default model).
+        self._default_model = self.model
 
         # Check custom_providers per-model context_length
         if _config_context_length is None:
@@ -1551,12 +1554,22 @@ class AIAgent:
         # ── Update context compressor ──
         if hasattr(self, "context_compressor") and self.context_compressor:
             from agent.model_metadata import get_model_context_length
+            # Only apply the config.yaml model.context_length override when the
+            # new model matches the default model it was set for.  Switching to a
+            # different model (e.g. from opus-4-6 to sonnet-4-6, or to a 1M-tier
+            # model) should use that model's true context window so the statusline
+            # bar accurately reflects the new ceiling rather than the old clamp.
+            _default_model = getattr(self, "_default_model", None) or self.model
+            _cfg_ctx = getattr(self, "_config_context_length", None)
+            _effective_cfg_ctx = _cfg_ctx if (
+                _cfg_ctx and new_model.rstrip("/").split("/")[-1] == _default_model.rstrip("/").split("/")[-1]
+            ) else None
             new_context_length = get_model_context_length(
                 self.model,
                 base_url=self.base_url,
                 api_key=self.api_key,
                 provider=self.provider,
-                config_context_length=getattr(self, "_config_context_length", None),
+                config_context_length=_effective_cfg_ctx,
             )
             self.context_compressor.update_model(
                 model=self.model,
