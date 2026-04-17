@@ -102,7 +102,7 @@ _DEFAULT_PROVIDER_MODELS = {
     "ai-gateway": ["anthropic/claude-opus-4.6", "anthropic/claude-sonnet-4.6", "openai/gpt-5", "google/gemini-3-flash"],
     "kilocode": ["anthropic/claude-opus-4.6", "anthropic/claude-sonnet-4.6", "openai/gpt-5.4", "google/gemini-3-pro-preview", "google/gemini-3-flash-preview"],
     "opencode-zen": ["gpt-5.4", "gpt-5.3-codex", "claude-sonnet-4-6", "gemini-3-flash", "glm-5", "kimi-k2.5", "minimax-m2.7"],
-    "opencode-go": ["glm-5", "kimi-k2.5", "mimo-v2-pro", "mimo-v2-omni", "minimax-m2.5", "minimax-m2.7"],
+    "opencode-go": ["glm-5.1", "glm-5", "kimi-k2.5", "mimo-v2-pro", "mimo-v2-omni", "minimax-m2.5", "minimax-m2.7"],
     "huggingface": [
         "Qwen/Qwen3.5-397B-A17B", "Qwen/Qwen3-235B-A22B-Thinking-2507",
         "Qwen/Qwen3-Coder-480B-A35B-Instruct", "deepseek-ai/DeepSeek-R1-0528",
@@ -430,6 +430,8 @@ def _print_setup_summary(config: dict, hermes_home):
         tool_status.append(("Text-to-Speech (MiniMax)", True, None))
     elif tts_provider == "mistral" and get_env_value("MISTRAL_API_KEY"):
         tool_status.append(("Text-to-Speech (Mistral Voxtral)", True, None))
+    elif tts_provider == "gemini" and (get_env_value("GEMINI_API_KEY") or get_env_value("GOOGLE_API_KEY")):
+        tool_status.append(("Text-to-Speech (Google Gemini)", True, None))
     elif tts_provider == "neutts":
         try:
             import importlib.util
@@ -913,6 +915,7 @@ def _setup_tts_provider(config: dict):
         "xai": "xAI TTS",
         "minimax": "MiniMax TTS",
         "mistral": "Mistral Voxtral TTS",
+        "gemini": "Google Gemini TTS",
         "neutts": "NeuTTS",
     }
     current_label = provider_labels.get(current_provider, current_provider)
@@ -935,10 +938,11 @@ def _setup_tts_provider(config: dict):
             "xAI TTS (Grok voices, needs API key)",
             "MiniMax TTS (high quality with voice cloning, needs API key)",
             "Mistral Voxtral TTS (multilingual, native Opus, needs API key)",
+            "Google Gemini TTS (30 prebuilt voices, prompt-controllable, needs API key)",
             "NeuTTS (local on-device, free, ~300MB model download)",
         ]
     )
-    providers.extend(["edge", "elevenlabs", "openai", "xai", "minimax", "mistral", "neutts"])
+    providers.extend(["edge", "elevenlabs", "openai", "xai", "minimax", "mistral", "gemini", "neutts"])
     choices.append(f"Keep current ({current_label})")
     keep_current_idx = len(choices) - 1
     idx = prompt_choice("Select TTS provider:", choices, keep_current_idx)
@@ -1041,6 +1045,19 @@ def _setup_tts_provider(config: dict):
             if api_key:
                 save_env_value("MISTRAL_API_KEY", api_key)
                 print_success("Mistral TTS API key saved")
+            else:
+                print_warning("No API key provided. Falling back to Edge TTS.")
+                selected = "edge"
+
+    elif selected == "gemini":
+        existing = get_env_value("GEMINI_API_KEY") or get_env_value("GOOGLE_API_KEY")
+        if not existing:
+            print()
+            print_info("Get a free API key at https://aistudio.google.com/app/apikey")
+            api_key = prompt("Gemini API key for TTS", password=True)
+            if api_key:
+                save_env_value("GEMINI_API_KEY", api_key)
+                print_success("Gemini TTS API key saved")
             else:
                 print_warning("No API key provided. Falling back to Edge TTS.")
                 selected = "edge"

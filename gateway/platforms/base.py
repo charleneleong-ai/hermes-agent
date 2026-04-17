@@ -1291,7 +1291,7 @@ class BasePlatformAdapter(ABC):
                 path = path[1:-1].strip()
             path = path.lstrip("`\"'").rstrip("`\"',.;:)}]")
             if path:
-                media.append((path, has_voice_tag))
+                media.append((os.path.expanduser(path), has_voice_tag))
 
         # Remove MEDIA tags from content (including surrounding quote/backtick wrappers)
         if media:
@@ -1579,7 +1579,7 @@ class BasePlatformAdapter(ABC):
             # session lifecycle and its cleanup races with the running task
             # (see PR #4926).
             cmd = event.get_command()
-            if cmd in ("approve", "deny", "status", "stop", "new", "reset", "background", "restart"):
+            if cmd in ("approve", "deny", "status", "stop", "new", "reset", "background", "restart", "queue", "q"):
                 logger.debug(
                     "[%s] Command '/%s' bypassing active-session guard for %s",
                     self.name, cmd, session_key,
@@ -1991,6 +1991,7 @@ class BasePlatformAdapter(ABC):
         chat_topic: Optional[str] = None,
         user_id_alt: Optional[str] = None,
         chat_id_alt: Optional[str] = None,
+        is_bot: bool = False,
     ) -> SessionSource:
         """Helper to build a SessionSource for this platform."""
         # Normalize empty topic to None
@@ -2007,6 +2008,7 @@ class BasePlatformAdapter(ABC):
             chat_topic=chat_topic.strip() if chat_topic else None,
             user_id_alt=user_id_alt,
             chat_id_alt=chat_id_alt,
+            is_bot=is_bot,
         )
     
     @abstractmethod

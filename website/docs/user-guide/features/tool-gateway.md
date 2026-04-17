@@ -7,6 +7,10 @@ sidebar_position: 2
 
 # Nous Tool Gateway
 
+:::tip Get Started
+The Tool Gateway is included with paid Nous Portal subscriptions. **[Manage your subscription →](https://portal.nousresearch.com/manage-subscription)**
+:::
+
 The **Tool Gateway** lets paid [Nous Portal](https://portal.nousresearch.com) subscribers use web search, image generation, text-to-speech, and browser automation through their existing subscription — no need to sign up for separate API keys from Firecrawl, FAL, OpenAI, or Browser Use.
 
 ## What's Included
@@ -14,7 +18,7 @@ The **Tool Gateway** lets paid [Nous Portal](https://portal.nousresearch.com) su
 | Tool | What It Does | Direct Alternative |
 |------|--------------|--------------------|
 | **Web search & extract** | Search the web and extract page content via Firecrawl | `FIRECRAWL_API_KEY`, `EXA_API_KEY`, `PARALLEL_API_KEY`, `TAVILY_API_KEY` |
-| **Image generation** | Generate images via FAL (FLUX 2 Pro + upscaling) | `FAL_KEY` |
+| **Image generation** | Generate images via FAL (8 models: FLUX 2 Klein/Pro, GPT-Image, Nano Banana Pro, Ideogram, Recraft V4 Pro, Qwen, Z-Image) | `FAL_KEY` |
 | **Text-to-speech** | Convert text to speech via OpenAI TTS | `VOICE_TOOLS_OPENAI_KEY`, `ELEVENLABS_API_KEY` |
 | **Browser automation** | Control cloud browsers via Browser Use | `BROWSER_USE_API_KEY`, `BROWSERBASE_API_KEY` |
 
@@ -22,7 +26,7 @@ All four tools bill to your Nous subscription. You can enable any combination �
 
 ## Eligibility
 
-The Tool Gateway is available to **paid** Nous Portal subscribers. Free-tier accounts do not have access.
+The Tool Gateway is available to **paid** [Nous Portal](https://portal.nousresearch.com/manage-subscription) subscribers. Free-tier accounts do not have access — [upgrade your subscription](https://portal.nousresearch.com/manage-subscription) to unlock it.
 
 To check your status:
 
@@ -172,7 +176,7 @@ Yes. The `use_gateway` flag is per-tool. You can mix and match — for example, 
 
 ### What if my subscription expires?
 
-Tools that were routed through the gateway will stop working until you renew or switch to direct API keys via `hermes tools`.
+Tools that were routed through the gateway will stop working until you [renew your subscription](https://portal.nousresearch.com/manage-subscription) or switch to direct API keys via `hermes tools`.
 
 ### Does the gateway work with the messaging gateway?
 
