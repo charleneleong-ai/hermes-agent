@@ -134,6 +134,39 @@ function wordRight(s: string, p: number) {
   return i
 }
 
+/**
+ * Move cursor one logical line up or down inside `s` while preserving the
+ * column offset from the current line's start. Returns `null` when the cursor
+ * is already on the first line (up) or last line (down) — callers use that
+ * signal to fall through to history cycling instead of eating the arrow key.
+ */
+export function lineNav(s: string, p: number, dir: -1 | 1): null | number {
+  const pos = snapPos(s, p)
+  const curStart = s.lastIndexOf('\n', pos - 1) + 1
+  const col = pos - curStart
+
+  if (dir < 0) {
+    if (curStart === 0) {
+      return null
+    }
+
+    const prevStart = s.lastIndexOf('\n', curStart - 2) + 1
+
+    return snapPos(s, Math.min(prevStart + col, curStart - 1))
+  }
+
+  const nextBreak = s.indexOf('\n', pos)
+
+  if (nextBreak < 0) {
+    return null
+  }
+
+  const nextEnd = s.indexOf('\n', nextBreak + 1)
+  const lineEnd = nextEnd < 0 ? s.length : nextEnd
+
+  return snapPos(s, Math.min(nextBreak + 1 + col, lineEnd))
+}
+
 function cursorLayout(value: string, cursor: number, cols: number) {
   const pos = Math.max(0, Math.min(cursor, value.length))
   const w = Math.max(1, cols - 1)
@@ -367,22 +400,20 @@ export function TextInput({
       return
     }
 
-    if (selected) {
-      setInputSelection({
-        clear: () => {
+    setInputSelection({
+      clear: () => {
+        if (selRef.current) {
           selRef.current = null
           setSel(null)
-        },
-        end: selected.end,
-        start: selected.start,
-        value: vRef.current
-      })
-    } else {
-      setInputSelection(null)
-    }
+        }
+      },
+      end: selected?.end ?? curRef.current,
+      start: selected?.start ?? curRef.current,
+      value: vRef.current
+    })
 
     return () => setInputSelection(null)
-  }, [focus, selected])
+  }, [cur, focus, selected])
 
   useEffect(
     () => () => {
@@ -570,9 +601,21 @@ export function TextInput({
         return
       }
 
+      if (k.upArrow || k.downArrow) {
+        const next = lineNav(vRef.current, curRef.current, k.upArrow ? -1 : 1)
+
+        if (next !== null) {
+          clearSel()
+          setCur(next)
+          curRef.current = next
+
+          return
+        }
+
+        return
+      }
+
       if (
-        k.upArrow ||
-        k.downArrow ||
         (k.ctrl && inp === 'c') ||
         k.tab ||
         (k.shift && k.tab) ||
@@ -594,7 +637,8 @@ export function TextInput({
       let c = curRef.current
       let v = vRef.current
       const mod = isActionMod(k)
-      const actionHome = k.home || isMacActionFallback(k, inp, 'a')
+      const wordMod = mod || k.meta
+      const actionHome = k.home || (!isMac && mod && inp === 'a') || isMacActionFallback(k, inp, 'a')
       const actionEnd = k.end || (mod && inp === 'e') || isMacActionFallback(k, inp, 'e')
       const actionDeleteToStart = (mod && inp === 'u') || isMacActionFallback(k, inp, 'u')
       const range = selRange()
@@ -608,7 +652,7 @@ export function TextInput({
         return swap(redo, undo)
       }
 
-      if (mod && inp === 'a') {
+      if (isMac && mod && inp === 'a') {
         return selectAll()
       }
 
@@ -619,32 +663,32 @@ export function TextInput({
         clearSel()
         c = v.length
       } else if (k.leftArrow) {
-        if (range && !mod) {
+        if (range && !wordMod) {
           clearSel()
           c = range.start
         } else {
           clearSel()
-          c = mod ? wordLeft(v, c) : prevPos(v, c)
+          c = wordMod ? wordLeft(v, c) : prevPos(v, c)
         }
       } else if (k.rightArrow) {
-        if (range && !mod) {
+        if (range && !wordMod) {
           clearSel()
           c = range.end
         } else {
           clearSel()
-          c = mod ? wordRight(v, c) : nextPos(v, c)
+          c = wordMod ? wordRight(v, c) : nextPos(v, c)
         }
-      } else if (mod && inp === 'b') {
+      } else if (wordMod && inp === 'b') {
         clearSel()
         c = wordLeft(v, c)
-      } else if (mod && inp === 'f') {
+      } else if (wordMod && inp === 'f') {
         clearSel()
         c = wordRight(v, c)
       } else if (range && (k.backspace || delFwd)) {
         v = v.slice(0, range.start) + v.slice(range.end)
         c = range.start
       } else if (k.backspace && c > 0) {
-        if (mod) {
+        if (wordMod) {
           const t = wordLeft(v, c)
           v = v.slice(0, t) + v.slice(c)
           c = t
@@ -654,7 +698,7 @@ export function TextInput({
           c = t
         }
       } else if (delFwd && c < v.length) {
-        if (mod) {
+        if (wordMod) {
           const t = wordRight(v, c)
           v = v.slice(0, c) + v.slice(t)
         } else {
