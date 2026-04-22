@@ -1,0 +1,9 @@
+name: tgaer-bridge
+version: 0.1.0
+description: "Data bridge to TGAER: captures hermes sessions as episodes for offline eval and GEQ optimization."
+author: "charleneleong"
+hooks:
+  - on_session_start
+  - post_tool_call
+  - post_llm_call
+  - on_session_finalize
