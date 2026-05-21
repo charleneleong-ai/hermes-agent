@@ -12,6 +12,10 @@ from hermes_cli.config import load_config
 from tools.environments.local import LocalEnvironment
 from hermes_constants import get_hermes_home
 
+# Inject MallocStackLogging=0 directly into the underlying OS environment
+# so we never see the macOS multiprocessing allocator spam during rollouts
+os.environ["MallocStackLogging"] = "0"
+
 def cmd_rollout(args: argparse.Namespace):
     """
     GSPO/RLVR Rollout Orchestrator.
