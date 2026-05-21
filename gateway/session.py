@@ -982,8 +982,16 @@ class SessionStore:
             if session_key in self._entries:
                 self._entries[session_key].suspended = True
                 self._save()
+                
+                # Trigger the title update hook if it exists
+                import subprocess
+                import os
+                hook_path = os.path.expanduser("~/.hermes/scripts/session_retitle_hook.py")
+                if os.path.exists(hook_path):
+                    subprocess.Popen([hook_path, self._entries[session_key].session_id])
+                
                 return True
-        return False
+            return False
 
     def mark_resume_pending(
         self,
@@ -1141,6 +1149,13 @@ class SessionStore:
 
             old_entry = self._entries[session_key]
             db_end_session_id = old_entry.session_id
+
+            # Trigger the title update hook if it exists
+            import subprocess
+            import os
+            hook_path = os.path.expanduser("~/.hermes/scripts/session_retitle_hook.py")
+            if os.path.exists(hook_path):
+                subprocess.Popen([hook_path, db_end_session_id])
 
             now = _now()
             session_id = f"{now.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
